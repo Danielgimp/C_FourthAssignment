@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include <ctype.h>
 // define character size
 #define CHAR_SIZE 26
 
@@ -51,33 +51,6 @@ void insert(struct Trie *head, char* str)
 	curr->isLeaf = 1;
 }
 
-// Iterative function to search a string in Trie. It returns 1
-// if the string is found in the Trie, else it returns 0
-int search(struct Trie* head, char* str)
-{
-
-	// return 0 if Trie is empty
-	if (head == NULL)
-		return 0;
-
-	struct Trie* curr = head;
-	while (*str)
-	{
-		// go to next node
-		curr = curr->character[*str - 'a'];
-		
-		// if string is invalid (reached end of path in Trie)
-		if (curr == NULL)
-			return 0;
-
-		// move to next charstracter
-		str++;
-	}
-
-	// if current node is a leaf and we have reached the
-	// end of the string, return 1
-	return curr->isLeaf;
-}
 
 int wordRep(struct Trie* head, char* str)
 {	
@@ -119,93 +92,60 @@ int wordRep(struct Trie* head, char* str)
 	return 1;
 }
 
-// returns 1 if given node has any children
-int haveChildren(struct Trie* curr)
-{
-	for (int i = 0; i < CHAR_SIZE; i++)
-		if (curr->character[i])
-			return 1;	// child found
-
-	return 0;
-}
-
-// Recursive function to delete a string in Trie
-int deletion(struct Trie **curr, char* str)
-{
-	// return if Trie is empty
-	if (*curr == NULL)
-		return 0;
-
-	// if we have not reached the end of the string
-	if (*str)
-	{
-		// recur for the node corresponding to next character in
-		// the string and if it returns 1, delete current node
-		// (if it is non-leaf)
-		if (*curr != NULL && (*curr)->character[*str - 'a'] != NULL &&
-			deletion(&((*curr)->character[*str - 'a']), str + 1) &&
-			(*curr)->isLeaf == 0)
-		{
-			if (!haveChildren(*curr))
-			{
-				free(*curr);
-				(*curr) = NULL;
-				return 1;
-			}
-			else {
-				return 0;
-			}
-		}
-	}
-
-	// if we have reached the end of the string
-	if (*str == '\0' && (*curr)->isLeaf)
-	{
-		// if current node is a leaf node and don't have any children
-		if (!haveChildren(*curr))
-		{
-			free(*curr); // delete current node
-			(*curr) = NULL;
-			return 1; // delete non-leaf parent nodes
-		}
-
-		// if current node is a leaf node and have children
-		else
-		{
-			// mark current node as non-leaf node (DON'T DELETE IT)
-			(*curr)->isLeaf = 0;
-			return 0;	   // don't delete its parent nodes
-		}
-	}
-
-	return 0;
+void printWord(struct Trie* head,char* word, int pos)
+{		
+   		word[pos] = '\0';
+		char tmp[strlen(word)];
+		int count=wordRep(head,"");
+		sprintf(tmp,"\t %d",count);
+		strcat(word, tmp);
+		printf("%s \n",word);
+	
+		
 }
 
 void printAllWords(struct Trie* head,char *word,int pos)
 {
-
-	if(head == NULL) return ;
-	
 		
+		if(head == NULL) return;
+	
 		if(head->isLeaf==1) 
 		{
-		word[pos] = '\0';
-		char tmp[strlen(word)];
-		//printf("Size Of tmp:%ld \t",strlen(word));
-		strcpy(tmp,word);
-		printf("%s \t %d \n",tmp,wordRep(head,""));
-			
+		printWord(head,word,pos);
+		
 		}
-		for(int i=0; i<CHAR_SIZE; i++)
+		for(int i=0; i<CHAR_SIZE ; i++)
    		{
       		if(head->character[i] != NULL)
         	{
          	word[pos] = i+'a';
+
          	printAllWords(head->character[i], word, pos+1);
       		}
+			     		     		     		
    		}
 }
 
+void printAllWordsReverse(struct Trie* head,char *word,int pos)
+{
+		
+		if(head == NULL) return;
+	
+		if(head->isLeaf==1) 
+		{
+		printWord(head,word,pos);
+		
+		}
+		for(int i=CHAR_SIZE-1; i>=0 ; i=i-1)
+   		{
+      		if(head->character[i] != NULL)
+        	{
+         	word[pos] = i+'a';
+         	printAllWordsReverse(head->character[i], word, pos+1);
+      		}
+			     		     		     		
+   		}
+}
 
 
 
@@ -216,17 +156,11 @@ int main(int argc, char *argv[])
 	if(argc!=1 && argc!=2)
 	{
 
-		printf("Wrong Usage! Correct Usage is %s r (Or without r) \n",argv[0]);
+		printf("Wrong Usage! Correct Usage is %s r(R) (Or without r,R) \n",argv[0]);
 		return 0;
 	}
+	
 
-	char *arg=argv[1];
-	printf(" %s \n",arg);
-	if(strcmp(argv[1],"r")!=0)
-	{
-		printf("Not r");
-		return 0;
-	}
 	
 
 	struct Trie* head = getNewTrieNode();
@@ -249,10 +183,11 @@ int main(int argc, char *argv[])
                 text = NULL;
                 break;
             }
+            
             text = tmp; //text is now temp
         }
-        //printf(" %d ",ch);
-        text[index] = ch;
+        if(ch>=65 && ch<=90) ch=ch+32;
+		if((ch>=97 && ch<=122) || (ch==' ' || ch=='.' || ch==',' || ch=='\n')) text[index] = ch;
         index++;
     }
 
@@ -268,17 +203,27 @@ int main(int argc, char *argv[])
         i++;
         p = strtok(NULL, " .,'\n'");
     }
-
-    
+   
 	for (int j = 0; j < i; j++) 
 	{
 		insert(head,words[j]);
-		//wordRep(head,words[j]);
-		//printf("%s \t %d \n", words[j],wordRep(head,words[j]));
+		
 	}
 	
-	
-	//char *words[i];
+	if(argv[1]!=NULL)
+	{
+		if(strcmp(argv[1],"R")==0) argv[1]="r";
+		if(strcmp(argv[1],"r")!=0)
+		{
+	    printf("Wrong Usage! Correct Usage is %s r(R) (Or without r,R) \n",argv[0]);
+		return 0;
+		}
+		if(strcmp(argv[1],"r")==0)
+		printAllWordsReverse(head,*words,0);
+	}
+	else
 	printAllWords(head,*words,0);
+	
+	
 	return 0;
 }
